@@ -112,14 +112,14 @@ namespace HeadlessBrowserAnalyzer
                 return CacheStatus.Hit;
             }
 
-            if (ContainsToken(normalized, "REFRESH"))
-            {
-                return CacheStatus.Revalidated;
-            }
-
             if (ContainsToken(normalized, "MISS"))
             {
                 return CacheStatus.Miss;
+            }
+
+            if (ContainsToken(normalized, "REFRESH"))
+            {
+                return CacheStatus.Revalidated;
             }
 
             if (ContainsToken(normalized, "DENIED") || ContainsToken(normalized, "NOCACHE"))
