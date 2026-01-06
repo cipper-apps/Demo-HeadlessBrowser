@@ -1,0 +1,115 @@
+# .NET / C# Project - Generated Files
+## Byte-compiled / optimized / DLL files
+bin/
+obj/
+*.dll
+*.exe
+*.so
+*.dylib
+*.o
+*.a
+*.lib
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+.dotnet/
+
+## Build Results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio / VS Code
+.vs/
+.vscode/
+*.sln.iml
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Rider
+.idea/
+*.swp
+*.swo
+
+## Test Results
+TestResults/
+*.trx
+*.coverage
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/NuGet.Config
+.nuget/NuGet.exe
+.nuget/packages/
+.nuget/packages.lock.json
+
+## Package Manager
+packages/
+.packages/
+paket-files/
+
+## Local History
+.localhistory/
+
+## BeatPulse Health Checks
+healthchecksdb
+
+# Application Generated Files
+## Playwright Browsers (download on first run)
+.playwright/
+
+## Generated HTML Files
+*.html
+page_*.html
+
+## Log Files
+*.log
+logs/
+
+## User Generated Files
+user_settings.json
+config.local.json
+
+## OS Specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+## Environment Files
+.env
+.env.local
+.env.*.local
+
+# Temporary Files
+*.tmp
+*.temp
+*.backup
+*.bak
+*.swp
+*.swo
+*~
+.~*
+
+# System Files
+*.lnk
+*.pdb
