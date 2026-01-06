@@ -25,82 +25,130 @@ namespace HeadlessBrowserAnalyzer
             }
 
             var lookup = new Dictionary<string, string>(headers, StringComparer.OrdinalIgnoreCase);
-
-            if (TryGetHeaderValue(lookup, "CF-Cache-Status", out var cfCacheStatus))
+            var detectors = new Func<Dictionary<string, string>, CacheStatus>[]
             {
-                return MapCloudflareCacheStatus(cfCacheStatus);
-            }
+                DetectCloudflareCacheStatus,
+                DetectCacheStatusHeader,
+                DetectCacheHitsHeader,
+                DetectXCacheHeader,
+                DetectStackPathCacheStatus,
+                DetectCacheControlBypass,
+                DetectAgeHeader
+            };
 
-            if (TryGetHeaderValue(lookup, "X-Cache-Status", out var cacheStatusValue))
+            foreach (var detector in detectors)
             {
-                var normalized = cacheStatusValue.Trim().ToLowerInvariant();
-                return normalized switch
+                var status = detector(lookup);
+                if (status != CacheStatus.Unknown)
                 {
-                    "hit" => CacheStatus.Hit,
-                    "miss" => CacheStatus.Miss,
-                    "revalidated" => CacheStatus.Revalidated,
-                    "stale" => CacheStatus.Stale,
-                    "uncacheable" => CacheStatus.Bypass,
-                    _ => CacheStatus.Unknown
-                };
+                    return status;
+                }
             }
 
-            if (TryGetHeaderValue(lookup, "X-Cache-Hits", out var cacheHitsValue)
+            return CacheStatus.Unknown;
+        }
+
+        private static CacheStatus DetectCloudflareCacheStatus(Dictionary<string, string> headers)
+        {
+            return TryGetHeaderValue(headers, "CF-Cache-Status", out var cfCacheStatus)
+                ? MapCloudflareCacheStatus(cfCacheStatus)
+                : CacheStatus.Unknown;
+        }
+
+        private static CacheStatus DetectCacheStatusHeader(Dictionary<string, string> headers)
+        {
+            if (!TryGetHeaderValue(headers, "X-Cache-Status", out var cacheStatusValue))
+            {
+                return CacheStatus.Unknown;
+            }
+
+            var normalized = cacheStatusValue.Trim().ToLowerInvariant();
+            return normalized switch
+            {
+                "hit" => CacheStatus.Hit,
+                "miss" => CacheStatus.Miss,
+                "revalidated" => CacheStatus.Revalidated,
+                "stale" => CacheStatus.Stale,
+                "uncacheable" => CacheStatus.Bypass,
+                _ => CacheStatus.Unknown
+            };
+        }
+
+        private static CacheStatus DetectCacheHitsHeader(Dictionary<string, string> headers)
+        {
+            if (TryGetHeaderValue(headers, "X-Cache-Hits", out var cacheHitsValue)
                 && int.TryParse(cacheHitsValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var hits)
                 && hits > 0)
             {
                 return CacheStatus.Hit;
             }
 
-            if (TryGetHeaderValue(lookup, "X-Cache", out var xCacheValue))
+            return CacheStatus.Unknown;
+        }
+
+        private static CacheStatus DetectXCacheHeader(Dictionary<string, string> headers)
+        {
+            if (!TryGetHeaderValue(headers, "X-Cache", out var xCacheValue))
             {
-                var normalized = xCacheValue.Trim();
-
-                var cloudfrontResult = MapCloudFrontCacheStatus(normalized);
-                if (cloudfrontResult != CacheStatus.Unknown)
-                {
-                    return cloudfrontResult;
-                }
-
-                var akamaiResult = MapAkamaiCacheStatus(normalized);
-                if (akamaiResult != CacheStatus.Unknown)
-                {
-                    return akamaiResult;
-                }
-
-                if (ContainsToken(normalized, "HIT"))
-                {
-                    return CacheStatus.Hit;
-                }
-
-                if (ContainsToken(normalized, "REFRESH"))
-                {
-                    return CacheStatus.Revalidated;
-                }
-
-                if (ContainsToken(normalized, "MISS"))
-                {
-                    return CacheStatus.Miss;
-                }
-
-                if (ContainsToken(normalized, "DENIED") || ContainsToken(normalized, "NOCACHE"))
-                {
-                    return CacheStatus.Bypass;
-                }
+                return CacheStatus.Unknown;
             }
 
-            if (TryGetHeaderValue(lookup, "X-HW", out var xHwValue) && xHwValue.Contains(".c", StringComparison.OrdinalIgnoreCase))
+            var normalized = xCacheValue.Trim();
+
+            var cloudfrontResult = MapCloudFrontCacheStatus(normalized);
+            if (cloudfrontResult != CacheStatus.Unknown)
+            {
+                return cloudfrontResult;
+            }
+
+            var akamaiResult = MapAkamaiCacheStatus(normalized);
+            if (akamaiResult != CacheStatus.Unknown)
+            {
+                return akamaiResult;
+            }
+
+            if (ContainsToken(normalized, "HIT"))
             {
                 return CacheStatus.Hit;
             }
 
-            if (TryGetHeaderValue(lookup, "Cache-Control", out var cacheControlValue)
-                && (ContainsToken(cacheControlValue, "no-store") || ContainsToken(cacheControlValue, "private")))
+            if (ContainsToken(normalized, "REFRESH"))
+            {
+                return CacheStatus.Revalidated;
+            }
+
+            if (ContainsToken(normalized, "MISS"))
+            {
+                return CacheStatus.Miss;
+            }
+
+            if (ContainsToken(normalized, "DENIED") || ContainsToken(normalized, "NOCACHE"))
             {
                 return CacheStatus.Bypass;
             }
 
-            if (TryGetHeaderValue(lookup, "Age", out var ageValue)
+            return CacheStatus.Unknown;
+        }
+
+        private static CacheStatus DetectStackPathCacheStatus(Dictionary<string, string> headers)
+        {
+            return TryGetHeaderValue(headers, "X-HW", out var xHwValue)
+                && xHwValue.Contains(".c", StringComparison.OrdinalIgnoreCase)
+                ? CacheStatus.Hit
+                : CacheStatus.Unknown;
+        }
+
+        private static CacheStatus DetectCacheControlBypass(Dictionary<string, string> headers)
+        {
+            return TryGetHeaderValue(headers, "Cache-Control", out var cacheControlValue)
+                && (ContainsToken(cacheControlValue, "no-store") || ContainsToken(cacheControlValue, "private"))
+                ? CacheStatus.Bypass
+                : CacheStatus.Unknown;
+        }
+
+        private static CacheStatus DetectAgeHeader(Dictionary<string, string> headers)
+        {
+            if (TryGetHeaderValue(headers, "Age", out var ageValue)
                 && int.TryParse(ageValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var age))
             {
                 return age > 0 ? CacheStatus.Hit : CacheStatus.Miss;
