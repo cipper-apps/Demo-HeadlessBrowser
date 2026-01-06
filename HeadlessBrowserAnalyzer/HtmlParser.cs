@@ -17,6 +17,7 @@ namespace HeadlessBrowserAnalyzer
         public Dictionary<string, string> ResponseHeaders { get; set; } = new();
         public int StatusCode { get; set; }
         public string StatusMessage { get; set; } = string.Empty;
+        public CacheStatus CacheStatus { get; set; } = CacheStatus.Unknown;
         public List<string> CssFiles { get; set; } = new();
         public List<string> InlineStyles { get; set; } = new();
         public List<string> JavaScriptFiles { get; set; } = new();
@@ -86,6 +87,8 @@ namespace HeadlessBrowserAnalyzer
         {
             Console.WriteLine($"Warning: Error parsing HTML: {ex.Message}");
         }
+
+        resources.CacheStatus = CacheStatusDetector.Detect(resources.ResponseHeaders);
 
         return resources;
     }
