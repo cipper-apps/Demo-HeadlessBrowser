@@ -24,6 +24,7 @@ namespace HeadlessBrowserAnalyzer
             output.AppendLine($"\nURL: {url}");
             output.AppendLine($"Page Title: {resources.PageTitle}");
             output.AppendLine($"Status: {resources.StatusCode} {resources.StatusMessage}");
+            output.AppendLine($"Cache Status: {resources.CacheStatus}");
             
             // Response Headers
             output.AppendLine("\n" + new string('-', 80));
