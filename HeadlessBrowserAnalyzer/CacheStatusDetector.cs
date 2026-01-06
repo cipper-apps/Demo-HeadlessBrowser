@@ -130,14 +130,14 @@ namespace HeadlessBrowserAnalyzer
 
         private static CacheStatus MapCloudFrontCacheStatus(string value)
         {
-            if (value.Contains("Hit from cloudfront", StringComparison.OrdinalIgnoreCase))
-            {
-                return CacheStatus.Hit;
-            }
-
             if (value.Contains("RefreshHit from cloudfront", StringComparison.OrdinalIgnoreCase))
             {
                 return CacheStatus.Revalidated;
+            }
+
+            if (value.Contains("Hit from cloudfront", StringComparison.OrdinalIgnoreCase))
+            {
+                return CacheStatus.Hit;
             }
 
             if (value.Contains("Miss from cloudfront", StringComparison.OrdinalIgnoreCase))
